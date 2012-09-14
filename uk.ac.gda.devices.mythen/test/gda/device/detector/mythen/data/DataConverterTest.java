@@ -64,7 +64,7 @@ public class DataConverterTest {
 	private static final double ANGLE_DELTA = 0.00001;
 	
 	@Before
-	protected void setUp() {
+	public void setUp() {
 		// Load some raw data
 		File rawDataFile = new File(REAL_RAW_MYTHEN_DATA_FILENAME);
 		rawData = new MythenRawDataset(rawDataFile);
