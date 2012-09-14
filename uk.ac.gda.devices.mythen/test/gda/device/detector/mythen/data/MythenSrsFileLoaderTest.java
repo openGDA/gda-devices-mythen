@@ -22,10 +22,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+import static org.junit.Assert.*;
 
-public class MythenSrsFileLoaderTest extends TestCase {
+public class MythenSrsFileLoaderTest {
 	
+	@Test
 	public void testWithEmptyFile() {
 		String contents = "";
 		MythenSrsFileLoader loader = new MythenSrsFileLoader();
@@ -37,6 +39,7 @@ public class MythenSrsFileLoaderTest extends TestCase {
 		}
 	}
 	
+	@Test
 	public void testWithFileWithoutEndLine() {
 		String contents = "First line\n" + 
 			"Second line\n";
@@ -49,6 +52,7 @@ public class MythenSrsFileLoaderTest extends TestCase {
 		}
 	}
 	
+	@Test
 	public void testWithFileWithHeaderButNoColumnLine() {
 		String contents = "&END\n";
 		MythenSrsFileLoader loader = new MythenSrsFileLoader();
@@ -60,6 +64,7 @@ public class MythenSrsFileLoaderTest extends TestCase {
 		}
 	}
 	
+	@Test
 	public void testWithFileWithListOfColumnsExcludingMythen() {
 		String contents = "&END\n" +
 			"a\tb\tc\n";
@@ -72,6 +77,7 @@ public class MythenSrsFileLoaderTest extends TestCase {
 		}
 	}
 	
+	@Test
 	public void testWithValidFile() throws IOException {
 		String contents = "&END\n" +
 			"a\tmythen\tb\n" +

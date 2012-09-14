@@ -24,7 +24,6 @@ import gda.device.detector.mythen.client.DummyMythenClient;
 import gda.device.detector.mythen.client.MythenClient;
 import gda.device.detector.mythen.data.AngularCalibrationParametersFile;
 import gda.device.detector.mythen.data.DataConverter;
-import gda.device.detector.mythen.data.DataConverterTest;
 import gda.device.scannable.DummyScannable;
 import gda.jython.InterfaceProvider;
 import gda.jython.MockJythonServerFacade;
@@ -32,19 +31,20 @@ import gda.util.TestUtils;
 
 import java.io.File;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+import static org.junit.Assert.*;
 
 /**
  * Tests {@link MythenDetectorImpl}.
  */
-public class MythenDetectorImplTest extends TestCase {
-	
+public class MythenDetectorImplTest {
+
 	/**
-	 * Tests that the detector is reading the delta position each time a data
-	 * collection is performed.
+	 * Tests that the detector is reading the delta position each time a data collection is performed.
 	 * 
 	 * @throws Exception
 	 */
+	@Test
 	public void testDelta() throws Exception {
 		final File scratchDir = TestUtils.createClassScratchDirectory(MythenDetectorImplTest.class);
 		System.out.println(scratchDir);
@@ -53,13 +53,13 @@ public class MythenDetectorImplTest extends TestCase {
 		InterfaceProvider.setTerminalPrinterForTesting(new MockJythonServerFacade());
 
 		Scannable delta = new DummyScannable();
-		
+
 		DataConverter dataConverter = new DataConverter();
-		File angCalParamsFile = TestUtils.getResourceAsFile(DataConverterTest.class, "ang.off");
+		File angCalParamsFile = new File("testfiles/gda/device/detector/mythen/data/ang.off");
 		dataConverter.setAngularCalibrationParameters(new AngularCalibrationParametersFile(angCalParamsFile));
-		
+
 		MythenClient mythenClient = new DummyMythenClient(18);
-		
+
 		MythenDetectorImpl mythen = new MythenDetectorImpl();
 		mythen.setDetectorID("Mythen");
 		mythen.setDataDirectory(scratchDir);
@@ -71,7 +71,7 @@ public class MythenDetectorImplTest extends TestCase {
 		mythen.collectData();
 		double[][] data1 = mythen.readoutProcessedData().toDoubleArray();
 		assertEquals(0.0017567, data1[0][0], 0.001);
-		
+
 		delta.asynchronousMoveTo(10);
 		mythen.collectData();
 		double[][] data2 = mythen.readoutProcessedData().toDoubleArray();

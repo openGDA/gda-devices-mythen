@@ -20,32 +20,37 @@ package gda.device.detector.mythen.client;
 
 import java.math.BigDecimal;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 import static java.math.BigDecimal.ZERO;
 import static java.math.BigDecimal.ONE;
+import static org.junit.Assert.*;
 
-public class BigDecimalUtilsTest extends TestCase {
+public class BigDecimalUtilsTest {
 
 	private static final BigDecimal MINUS_ONE = new BigDecimal("-1");
 	
+	@Test
 	public void testLess() {
 		assertTrue( BigDecimalUtils.isLess(MINUS_ONE, ZERO));
 		assertFalse(BigDecimalUtils.isLess(ZERO,      ZERO));
 		assertFalse(BigDecimalUtils.isLess(ONE,       ZERO));
 	}
 	
+	@Test
 	public void testLessOrEqual() {
 		assertTrue( BigDecimalUtils.isLessOrEqual(MINUS_ONE, ZERO));
 		assertTrue( BigDecimalUtils.isLessOrEqual(ZERO,      ZERO));
 		assertFalse(BigDecimalUtils.isLessOrEqual(ONE,       ZERO));
 	}
 	
+	@Test
 	public void testGreaterOrEqual() {
 		assertFalse(BigDecimalUtils.isGreaterOrEqual(MINUS_ONE, ZERO));
 		assertTrue( BigDecimalUtils.isGreaterOrEqual(ZERO,      ZERO));
 		assertTrue( BigDecimalUtils.isGreaterOrEqual(ONE,       ZERO));
 	}
 	
+	@Test
 	public void testGreater() {
 		assertFalse(BigDecimalUtils.isGreater(MINUS_ONE, ZERO));
 		assertFalse(BigDecimalUtils.isGreater(ZERO,      ZERO));

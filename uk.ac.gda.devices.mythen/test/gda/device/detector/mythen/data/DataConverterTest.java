@@ -18,7 +18,6 @@
 
 package gda.device.detector.mythen.data;
 
-import gda.util.TestUtils;
 import gda.device.detector.mythen.data.AngularCalibrationParametersFile;
 import gda.device.detector.mythen.data.DataConverter;
 import gda.device.detector.mythen.data.MythenProcessedDataset;
@@ -31,18 +30,20 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
 
 /**
  * Tests for {@link DataConverter}.
  */
-public class DataConverterTest extends TestCase {
+public class DataConverterTest {
 	
-	private static final String REAL_RAW_MYTHEN_DATA_FILENAME = "Si_15keV_5.raw";
+	private static final String REAL_RAW_MYTHEN_DATA_FILENAME = "testfiles/gda/device/detector/mythen/data/Si_15keV_5.raw";
 	
-	private static final String REAL_PROCESSED_MYTHEN_DATA_FILENAME = "Si_15keV_5.dat";
+	private static final String REAL_PROCESSED_MYTHEN_DATA_FILENAME = "testfiles/gda/device/detector/mythen/data/Si_15keV_5.dat";
 	
-	private static final String REAL_ANGULAR_CALIBRATION_PARAMETERS_FILENAME = "ang.off";
+	private static final String REAL_ANGULAR_CALIBRATION_PARAMETERS_FILENAME = "testfiles/gda/device/detector/mythen/data/ang.off";
 	
 	private MythenRawDataset rawData;
 	
@@ -62,23 +63,23 @@ public class DataConverterTest extends TestCase {
 	 */
 	private static final double ANGLE_DELTA = 0.00001;
 	
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	protected void setUp() {
 		// Load some raw data
-		File rawDataFile = TestUtils.getResourceAsFile(DataConverterTest.class, REAL_RAW_MYTHEN_DATA_FILENAME);
+		File rawDataFile = new File(REAL_RAW_MYTHEN_DATA_FILENAME);
 		rawData = new MythenRawDataset(rawDataFile);
 
 		converter = new DataConverter();
 
 		// Load angular calibration parameters
-		File angCalParamsFile = TestUtils.getResourceAsFile(DataConverterTest.class, REAL_ANGULAR_CALIBRATION_PARAMETERS_FILENAME);
+		File angCalParamsFile = new File(REAL_ANGULAR_CALIBRATION_PARAMETERS_FILENAME);
 		AngularCalibrationParameters params = new AngularCalibrationParametersFile(angCalParamsFile);
 		converter.setAngularCalibrationParameters(params);
 		
 		converter.setBeamlineOffset(0.08208);
 		
 		// Load a 'real' Mythen data file
-		File actualProcessedDataFile = TestUtils.getResourceAsFile(DataConverter.class, REAL_PROCESSED_MYTHEN_DATA_FILENAME);
+		File actualProcessedDataFile = new File(REAL_PROCESSED_MYTHEN_DATA_FILENAME);
 		actualProcessedData = new MythenProcessedDataset(actualProcessedDataFile);
 	}
 
@@ -86,6 +87,7 @@ public class DataConverterTest extends TestCase {
 	 * Tests processing of raw data to ensure the calculated angle/count/error
 	 * values match those in a 'real' Mythen data file.
 	 */
+	@Test
 	public void testValuesCalculatedByDataConverter() {
 		MythenProcessedDataset processedData = converter.process(rawData, DETECTOR_POSITION);
 		compareDatasets(actualProcessedData, processedData);
@@ -94,6 +96,7 @@ public class DataConverterTest extends TestCase {
 	/**
 	 * Tests that the bad channel list is applied by the data converter.
 	 */
+	@Test
 	public void testConverterWithBadChannelList() {
 		// Some bad channels will be removed
 		converter.setBadChannelProvider(new SimpleBadChannelProvider(setOf(10, 20, 30)));
@@ -124,6 +127,7 @@ public class DataConverterTest extends TestCase {
 	 * Tests that the converter treats a {@code null} bad channel list the same
 	 * as an empty list.
 	 */
+	@Test
 	public void testConverterWithNullBadChannelList() {
 		converter.setBadChannelProvider(null);
 		
@@ -135,6 +139,7 @@ public class DataConverterTest extends TestCase {
 	/**
 	 * Tests flat field correction.
 	 */
+	@Test
 	public void testConverterWithFlatFieldCorrection() {
 		// Using raw data itself as the flat field data, so all count values in
 		// processed data should be the same

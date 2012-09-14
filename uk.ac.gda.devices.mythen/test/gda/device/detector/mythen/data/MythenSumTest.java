@@ -19,15 +19,19 @@
 package gda.device.detector.mythen.data;
 
 import java.util.List;
+
 import java.util.Map;
 import java.util.TreeMap;
 
 import gda.device.detector.mythen.data.MythenSum.AlignedData;
 import gda.device.detector.mythen.data.MythenSum.ModuleBoundary;
-import junit.framework.TestCase;
 
-public class MythenSumTest extends TestCase {
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class MythenSumTest {
 	
+	@Test
 	public void testDetermineModuleBoundariesWithNoBadChannels() {
 		BadChannelProvider badChannels = new SimpleBadChannelProvider();
 		ModuleBoundary[] boundaries = MythenSum.determineModuleBoundaries(2, badChannels);
@@ -37,6 +41,7 @@ public class MythenSumTest extends TestCase {
 		assertEquals(2559, boundaries[1].last);
 	}
 	
+	@Test
 	public void testDetermineModuleBoundariesWithBadChannels() {
 		BadChannelProvider badChannels = new SimpleBadChannelProvider(100); // in 1st module
 		ModuleBoundary[] boundaries = MythenSum.determineModuleBoundaries(2, badChannels);
@@ -53,6 +58,7 @@ public class MythenSumTest extends TestCase {
 		assertEquals(2558, boundaries[1].last);
 	}
 	
+	@Test
 	public void testModuleForChannel() {
 		assertEquals(0, MythenSum.moduleForChannel(0));
 		assertEquals(0, MythenSum.moduleForChannel(1279));
@@ -60,6 +66,7 @@ public class MythenSumTest extends TestCase {
 		assertEquals(17, MythenSum.moduleForChannel(18 * 1280 - 1));
 	}
 	
+	@Test
 	public void testInterpolateWithZeroCountsForBothAngles() {
 		double[] lowerData = new double[] {20, 0, 0};
 		double[] upperData = new double[] {30, 0, 0};
@@ -67,6 +74,7 @@ public class MythenSumTest extends TestCase {
 		assertEquals(0.0, interpolatedCount, 0);
 	}
 	
+	@Test
 	public void testInterpolateWithPositiveGradient() {
 		double[] lowerData = new double[] {20, 10, 0};
 		double[] upperData = new double[] {30, 20, 0};
@@ -74,6 +82,7 @@ public class MythenSumTest extends TestCase {
 		assertEquals(15.0, interpolatedCount, 0.000001);
 	}
 	
+	@Test
 	public void testInterpolateWithNegativeGradient() {
 		double[] lowerData = new double[] {20, 20, 0};
 		double[] upperData = new double[] {30, 10, 0};
@@ -81,6 +90,7 @@ public class MythenSumTest extends TestCase {
 		assertEquals(15.0, interpolatedCount, 0.000001);
 	}
 	
+	@Test
 	public void testAddAlignedDataForNewGridIndex() {
 		Map<Integer, List<AlignedData>> alignedData = new TreeMap<Integer, List<AlignedData>>();
 		
@@ -99,6 +109,7 @@ public class MythenSumTest extends TestCase {
 		assertSame(newDataPoint, dataPointsForTheOnlyGridIndex.get(0));
 	}
 	
+	@Test
 	public void testAddAlignedDataForExistingGridIndex() {
 		Map<Integer, List<AlignedData>> alignedData = new TreeMap<Integer, List<AlignedData>>();
 		

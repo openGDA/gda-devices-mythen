@@ -50,7 +50,7 @@ public class SplitFilesProvidersTest {
 		mythenModuleList.setModules(moduleNames);
 		mythenModuleList.setMode("standard");
 		mythenModuleList.setFlatFilePrefix("FlatCu");
-		mythenModuleList.setCalibrationFolder(SplitFilesProvidersTest.class.getResource("testfiles").getFile());
+		mythenModuleList.setCalibrationFolder("testfiles/gda/device/detector/mythen/data/SplitFilesProvidersTest");
 
 		badChannelProvider = new SplitFilesBadChannelProvider();
 		badChannelProvider.setModules(mythenModuleList);
@@ -67,7 +67,7 @@ public class SplitFilesProvidersTest {
 	@Test
 	public void testCalibrationFilesRead(){
 		try {
-			MythenRawDataset rawData = new MythenRawDataset(new File(SplitFilesProvidersTest.class.getResource("testfiles/5485-mythen-0001.raw").getFile()));
+			MythenRawDataset rawData = new MythenRawDataset(new File("testfiles/gda/device/detector/mythen/data/SplitFilesProvidersTest/5485-mythen-0001.raw"));
 			MythenProcessedDataset processed = dataConverter.process(rawData, 0);
 			
 			assertEquals(7675,processed.getAngleArray().length);
@@ -80,8 +80,7 @@ public class SplitFilesProvidersTest {
 	@Test
 	public void testChangeCalibrationData() {
 		try {
-			MythenRawDataset rawData = new MythenRawDataset(new File(SplitFilesProvidersTest.class.getResource(
-					"testfiles/5485-mythen-0001.raw").getFile()));
+			MythenRawDataset rawData = new MythenRawDataset(new File("testfiles/gda/device/detector/mythen/data/SplitFilesProvidersTest/5485-mythen-0001.raw"));
 			MythenProcessedDataset standardprocessed = dataConverter.process(rawData, 0);
 			
 			MythenProcessedDataset standardprocessedAgain = dataConverter.process(rawData, 0);

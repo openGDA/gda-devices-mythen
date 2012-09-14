@@ -19,23 +19,23 @@
 package gda.device.detector.mythen.data;
 
 import static gda.device.detector.mythen.data.MythenDataFileUtils.getDataSubset;
-import gda.util.TestUtils;
 
 import java.io.File;
 import java.util.Arrays;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+import static org.junit.Assert.*;
 
 /**
  * Tests the {@link MythenDataFileUtils} class.
  */
-public class MythenDataFileUtilsTest extends TestCase {
+public class MythenDataFileUtilsTest {
 
 	/**
 	 * Ensures a Mythen raw data file can be loaded.
 	 */
-	public void testReadMythenDataFileWithRawFile() throws Exception {
-		File file = TestUtils.getResourceAsFile(MythenDataFileUtilsTest.class, "9keV_THscan_20_1_800_adv700_55.raw");
+	public void testReadMythenDataFileWithRawFile() {
+		File file = new File("testfiles/gda/device/detector/mythen/data/MythenDataFileUtilsTest/9keV_THscan_20_1_800_adv700_55.raw");
 		double[][] data = MythenDataFileUtils.readMythenRawDataFile(file.getAbsolutePath());
 		
 		// Check dimensions of data
@@ -43,15 +43,16 @@ public class MythenDataFileUtilsTest extends TestCase {
 		assertEquals(2, data[0].length);
 		
 		// Spot-check a couple of values
-		assertEquals("Unexpected data value", 64.0, data[105][1]);
-		assertEquals("Unexpected data value", 67.0, data[1089][1]);
+		assertEquals("Unexpected data value", 64.0, data[105][1], 0);
+		assertEquals("Unexpected data value", 67.0, data[1089][1], 0);
 	}
 	
 	/**
 	 * Ensures a Mythen processed data file can be loaded.
 	 */
-	public void testReadMythenDataFileWithProcessedFile() throws Exception {
-		File file = TestUtils.getResourceAsFile(MythenDataFileUtilsTest.class, "Si_15keV_5.dat");
+	@Test
+	public void testReadMythenDataFileWithProcessedFile() {
+		File file = new File("testfiles/gda/device/detector/mythen/data/Si_15keV_5.dat");
 		double[][] data = MythenDataFileUtils.readMythenProcessedDataFile(file.getAbsolutePath(), false);
 		
 		// Check dimensions of data
@@ -64,8 +65,9 @@ public class MythenDataFileUtilsTest extends TestCase {
 		assertEquals(19.0, data[16076][2], 0);
 	}
 	
-	public void testReadMythenProcessedDataFiles() throws Exception {
-		File file = TestUtils.getResourceAsFile(MythenDataFileUtilsTest.class, "Si_15keV_5.dat");
+	@Test
+	public void testReadMythenProcessedDataFiles() {
+		File file = new File("testfiles/gda/device/detector/mythen/data/Si_15keV_5.dat");
 		String[] filenames = new String[50];
 		Arrays.fill(filenames, file.getAbsolutePath());
 		
@@ -81,6 +83,7 @@ public class MythenDataFileUtilsTest extends TestCase {
 		}
 	}
 	
+	@Test
 	public void testGetDataSubset() {
 		double[][] singleDataset = {
 			{1.0, 10},
@@ -102,6 +105,7 @@ public class MythenDataFileUtilsTest extends TestCase {
 		assertEquals(0, getDataSubset(input,  2.5, 3.0)[0].length);
 	}
 	
+	@Test
 	public void testGetInclusiveIndexForMinIncludedAngle() {
 		final double[] angles = {1.0, 2.0, 3.0};
 		assertEquals(0, MythenDataFileUtils.getInclusiveIndexForMinIncludedAngle(angles, 0.5));
@@ -113,6 +117,7 @@ public class MythenDataFileUtilsTest extends TestCase {
 		assertEquals(3, MythenDataFileUtils.getInclusiveIndexForMinIncludedAngle(angles, 3.5));
 	}
 	
+	@Test
 	public void testGetExclusiveIndexForMaxIncludedAngle() {
 		final double[] angles = {1.0, 2.0, 3.0};
 		assertEquals(0, MythenDataFileUtils.getExclusiveIndexForMaxIncludedAngle(angles, 0.5));
