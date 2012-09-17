@@ -1,4 +1,4 @@
-<project name="plugin-uk.ac.gda.devices.mythen" basedir=".">
+<project name="plugin-uk.ac.gda.devices.mythen.test" basedir=".">
 
     <dirname property="GDA-plugin.basedir" file="${ant.file.${ant.project.name}}" />
     <pathconvert property="workspace.loc" setonempty="false">
@@ -10,6 +10,10 @@
         <path><pathelement location="${GDA-plugin.basedir}" /></path>
     </pathconvert>
     <property name="workspace.git.loc" value="${workspace.loc}_git" />
+    <pathconvert property="GDA-plugin.host.basedir" setonempty="false">
+            <regexpmapper from="(.*).test" to="\1"/>
+            <path><pathelement location="${GDA-plugin.basedir}" /></path>
+    </pathconvert>
     <import file="${workspace.loc}/builder/build-common.xml" />
 
     <!-- ====================================================================
@@ -23,6 +27,8 @@
                 <pathelement location="${junitjar.loc}" />
                 <pathelement location="${jythonjar.loc}"/>
                 <pathelement location="${GDA-plugin.basedir}/bin" />
+                <pathelement location="${workspace.git.loc}/gda-core.git/uk.ac.gda.test.helpers/bin" />
+                <pathelement location="${GDA-plugin.host.basedir}/bin" />
                 <pathelement location="${workspace.git.loc}/gda-core.git/uk.ac.gda.api/bin" />
                 <pathelement location="${workspace.git.loc}/gda-common.git/uk.ac.gda.common/bin" />
                 <pathelement location="${workspace.git.loc}/gda-core.git/uk.ac.gda.core/classes/main" />
@@ -34,7 +40,7 @@
                 <pathelement location="${workspace.loc}/tp/plugins/*" />
             </classpath>
             <batchtest todir="@{report.dir}">
-                <fileset dir="${GDA-plugin.basedir}/test">
+                <fileset dir="${GDA-plugin.basedir}/src">
                     <include name="**/*Test.java" />
                 </fileset>
             </batchtest>
