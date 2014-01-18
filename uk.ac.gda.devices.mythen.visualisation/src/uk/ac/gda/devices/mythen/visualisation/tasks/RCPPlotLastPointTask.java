@@ -18,7 +18,6 @@
 
 package uk.ac.gda.devices.mythen.visualisation.tasks;
 
-import gda.analysis.RCPPlotter;
 import gda.device.detector.mythen.data.MythenProcessedDataset;
 import gda.device.detector.mythen.tasks.AtPointEndTask;
 
@@ -26,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 
+import uk.ac.diamond.scisoft.analysis.SDAPlotter;
 import uk.ac.diamond.scisoft.analysis.dataset.DoubleDataset;
 import uk.ac.diamond.scisoft.analysis.dataset.IDataset;
 
@@ -43,7 +43,6 @@ public class RCPPlotLastPointTask implements AtPointEndTask, InitializingBean {
 		}
 	}
 
-	@SuppressWarnings("static-access")
 	@Override
 	public void run(String filename, MythenProcessedDataset processedData) {
 		double[] angles = processedData.getAngleArray();
@@ -55,14 +54,14 @@ public class RCPPlotLastPointTask implements AtPointEndTask, InitializingBean {
 		countsDataset.setName(filename);
 
 		try {
-			RCPPlotter.plot(panelName, filename, channelsDataset, countsDataset);
+			SDAPlotter.plot(panelName, channelsDataset, countsDataset);
+//			RCPPlotter.plot(panelName, filename, channelsDataset, countsDataset);
 		} catch (Exception e) {
 			logger.error("Exception throwed on RCPPlotter.plot to panel " + panelName, e);
 		}
 
 	}
 
-	@SuppressWarnings("static-access")
 	@Override
 	public void run(String filename, MythenProcessedDataset processedData, boolean clearFirst) {
 		double[] angles = processedData.getAngleArray();
@@ -75,9 +74,9 @@ public class RCPPlotLastPointTask implements AtPointEndTask, InitializingBean {
 
 		try {
 			if (clearFirst) {
-				RCPPlotter.plot(panelName, filename, channelsDataset, new IDataset[] { countsDataset}, getxAxisName(), getyAxisName());
+				SDAPlotter.plot(panelName, channelsDataset, new IDataset[] { countsDataset}, getxAxisName(), getyAxisName());
 			} else {
-				RCPPlotter.addPlot(panelName, filename, new IDataset[] { channelsDataset }, new IDataset[] { countsDataset }, getxAxisName(), getyAxisName());
+				SDAPlotter.addPlot(panelName, "",new IDataset[] { channelsDataset }, new IDataset[] { countsDataset }, getxAxisName(), getyAxisName());
 			}
 		} catch (Exception e) {
 			logger.error("Exception throwed on RCPPlotter.plot to panel " + panelName, e);
