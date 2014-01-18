@@ -27,6 +27,7 @@ import gda.device.detector.mythen.data.MythenDataFileUtils;
 import gda.device.detector.mythen.data.MythenDataFileUtils.FileType;
 import gda.device.detector.mythen.data.MythenSum;
 import gda.device.detector.mythen.tasks.DataProcessingTask;
+import gda.jython.InterfaceProvider;
 
 import java.io.File;
 import java.io.IOException;
@@ -95,11 +96,13 @@ public class RCPPlotSummingDataTask implements DataProcessingTask, InitializingB
 		
 		// Sum the data
 		logger.info("Summing data...");
+		print("Summing data ...");
 		double[][] summedData = MythenSum.sum(allData, numberOfModules, dataConverter.getBadChannelProvider(), step);
 		logger.info("Done");
 		// Save the summed data
 		File summedDataFile = new File(dataDirectory, summedFilename);
 		logger.info(String.format("Saving summed data to %s", summedDataFile.getAbsolutePath()));
+		print("Saving summed data to "+ summedDataFile.getAbsolutePath());
 		try {
 			MythenDataFileUtils.saveProcessedDataFile(summedData, summedDataFile.getAbsolutePath());
 			logger.info("Summed data saved successfully");
@@ -171,4 +174,15 @@ public class RCPPlotSummingDataTask implements DataProcessingTask, InitializingB
 	public void setyAxisName(String yAxisName) {
 		this.yAxisName = yAxisName;
 	}
+	/**
+	 * method to print message to the Jython Terminal console.
+	 * 
+	 * @param msg
+	 */
+	private void print(String msg) {
+		if (InterfaceProvider.getTerminalPrinter() != null) {
+			InterfaceProvider.getTerminalPrinter().print(msg);
+		}
+	}
+
 }
