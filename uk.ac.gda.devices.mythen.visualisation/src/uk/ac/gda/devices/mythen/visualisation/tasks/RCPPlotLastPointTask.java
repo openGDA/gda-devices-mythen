@@ -18,16 +18,24 @@
 
 package uk.ac.gda.devices.mythen.visualisation.tasks;
 
+import java.io.File;
+
+import gda.data.PathConstructor;
 import gda.device.detector.mythen.data.MythenProcessedDataset;
 import gda.device.detector.mythen.tasks.AtPointEndTask;
+import gda.jython.scriptcontroller.ScriptControllerBase;
+import gda.jython.scriptcontroller.Scriptcontroller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 
+import com.google.common.base.Joiner;
+
 import uk.ac.diamond.scisoft.analysis.SDAPlotter;
 import uk.ac.diamond.scisoft.analysis.dataset.DoubleDataset;
 import uk.ac.diamond.scisoft.analysis.dataset.IDataset;
+import uk.ac.gda.devices.mythen.visualisation.event.PlotDataFileEvent;
 
 public class RCPPlotLastPointTask implements AtPointEndTask, InitializingBean {
 
@@ -35,51 +43,74 @@ public class RCPPlotLastPointTask implements AtPointEndTask, InitializingBean {
 	private String xAxisName;
 	private String yAxisName;
 	private static final Logger logger = LoggerFactory.getLogger(RCPPlotLastPointTask.class);
+	private boolean usePlotServer=true; // the default existing behaviour must not be changed
+	private Scriptcontroller eventAdmin;
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		if (getPanelName() == null) {
-			throw new IllegalStateException("You have not specified which panel the data should be plotted in");
+		if (isUsePlotServer()) {
+			if (getPanelName() == null) {
+				throw new IllegalStateException("You have not specified which panel the data should be plotted in");
+			}
+		} else {
+			if (getEventAdmin()==null) {
+				throw new IllegalStateException("You have not specified a Scriptcontroller as event admin.");
+			}
 		}
 	}
 
 	@Override
 	public void run(String filename, MythenProcessedDataset processedData) {
-		double[] angles = processedData.getAngleArray();
-		double[] counts = processedData.getCountArray();
+		if (isUsePlotServer()) {
+			double[] angles = processedData.getAngleArray();
+			double[] counts = processedData.getCountArray();
 
-		IDataset channelsDataset = new DoubleDataset(angles, null);
-		channelsDataset.setName("angle");
-		IDataset countsDataset = new DoubleDataset(counts, null);
-		countsDataset.setName(filename);
+			IDataset channelsDataset = new DoubleDataset(angles, null);
+			channelsDataset.setName("angle");
+			IDataset countsDataset = new DoubleDataset(counts, null);
+			countsDataset.setName(filename);
 
-		try {
-			SDAPlotter.plot(panelName, channelsDataset, countsDataset);
-//			RCPPlotter.plot(panelName, filename, channelsDataset, countsDataset);
-		} catch (Exception e) {
-			logger.error("Exception throwed on RCPPlotter.plot to panel " + panelName, e);
+			try {
+				SDAPlotter.plot(panelName, channelsDataset, countsDataset);
+			} catch (Exception e) {
+				logger.error("Exception throwed on RCPPlotter.plot to panel " + panelName, e);
+			}
+		} else {
+			Joiner name=Joiner.on(File.pathSeparator).skipNulls();
+			String fullPathName=name.join(PathConstructor.createFromDefaultProperty(),filename);
+			((ScriptControllerBase)getEventAdmin()).update(this, new PlotDataFileEvent(fullPathName, true));
 		}
 
 	}
 
 	@Override
 	public void run(String filename, MythenProcessedDataset processedData, boolean clearFirst) {
-		double[] angles = processedData.getAngleArray();
-		double[] counts = processedData.getCountArray();
+		if (isUsePlotServer()) {
+			// do data plot using plot server.
+			double[] angles = processedData.getAngleArray();
+			double[] counts = processedData.getCountArray();
 
-		IDataset channelsDataset = new DoubleDataset(angles, null);
-		channelsDataset.setName(getxAxisName());
-		IDataset countsDataset = new DoubleDataset(counts, null);
-		countsDataset.setName(filename);
+			IDataset channelsDataset = new DoubleDataset(angles, null);
+			channelsDataset.setName(getxAxisName());
+			IDataset countsDataset = new DoubleDataset(counts, null);
+			countsDataset.setName(filename);
 
-		try {
-			if (clearFirst) {
-				SDAPlotter.plot(panelName, channelsDataset, new IDataset[] { countsDataset}, getxAxisName(), getyAxisName());
-			} else {
-				SDAPlotter.addPlot(panelName, "",new IDataset[] { channelsDataset }, new IDataset[] { countsDataset }, getxAxisName(), getyAxisName());
+			try {
+				if (clearFirst) {
+					SDAPlotter.plot(panelName, channelsDataset, new IDataset[] { countsDataset }, getxAxisName(),
+							getyAxisName());
+				} else {
+					SDAPlotter.addPlot(panelName, "", new IDataset[] { channelsDataset },
+							new IDataset[] { countsDataset }, getxAxisName(), getyAxisName());
+				}
+			} catch (Exception e) {
+				logger.error("Exception throwed on RCPPlotter.plot to panel " + panelName, e);
 			}
-		} catch (Exception e) {
-			logger.error("Exception throwed on RCPPlotter.plot to panel " + panelName, e);
+		} else {
+			//send event to client to do data plot
+			Joiner name=Joiner.on(File.pathSeparator).skipNulls();
+			String fullPathName=name.join(PathConstructor.createFromDefaultProperty(),filename);
+			((ScriptControllerBase)getEventAdmin()).update(this, new PlotDataFileEvent(fullPathName, clearFirst));
 		}
 	}
 
@@ -105,6 +136,22 @@ public class RCPPlotLastPointTask implements AtPointEndTask, InitializingBean {
 
 	public void setyAxisName(String yAxisName) {
 		this.yAxisName = yAxisName;
+	}
+
+	public boolean isUsePlotServer() {
+		return usePlotServer;
+	}
+
+	public void setUsePlotServer(boolean usePlotServer) {
+		this.usePlotServer = usePlotServer;
+	}
+
+	public Scriptcontroller getEventAdmin() {
+		return eventAdmin;
+	}
+
+	public void setEventAdmin(Scriptcontroller eventAdmin) {
+		this.eventAdmin = eventAdmin;
 	}
 
 }
