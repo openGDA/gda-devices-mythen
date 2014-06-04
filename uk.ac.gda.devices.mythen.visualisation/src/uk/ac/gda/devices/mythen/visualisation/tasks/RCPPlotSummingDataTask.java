@@ -28,6 +28,8 @@ import gda.device.detector.mythen.data.MythenDataFileUtils.FileType;
 import gda.device.detector.mythen.data.MythenSum;
 import gda.device.detector.mythen.tasks.DataProcessingTask;
 import gda.jython.InterfaceProvider;
+import gda.jython.scriptcontroller.ScriptControllerBase;
+import gda.jython.scriptcontroller.Scriptcontroller;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,10 +40,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 
+import uk.ac.diamond.scisoft.analysis.PlotServer;
 import uk.ac.diamond.scisoft.analysis.SDAPlotter;
 import uk.ac.diamond.scisoft.analysis.dataset.DoubleDataset;
 import uk.ac.gda.devices.mythen.epics.MythenDetector;
-
+import uk.ac.gda.devices.mythen.visualisation.event.PlotDataFileEvent;
+/**
+ * A Spring configurable {@link DataProcessingTask} to sum all the data files collected from the {@link MythenDetector} in a scan.
+ * The summed data are then plotted either using an instance of {@link PlotServer} built-in GDA server or directly by the GDA client 
+ * from the data file using event notification to the registered observers. 
+ */
 public class RCPPlotSummingDataTask implements DataProcessingTask, InitializingBean {
 	
 	private static final Logger logger = LoggerFactory.getLogger(RCPPlotSummingDataTask.class);
@@ -64,6 +72,10 @@ public class RCPPlotSummingDataTask implements DataProcessingTask, InitializingB
 	private String xAxisName;
 
 	private String yAxisName;
+
+	private boolean usePlotServer=true; //this is the old behaviour
+	
+	private Scriptcontroller eventAdmin;
 	
 	protected void sumProcessedData(Detector detector)  throws DeviceException {
 		ArrayList<File> files=new ArrayList<File>();
@@ -117,27 +129,33 @@ public class RCPPlotSummingDataTask implements DataProcessingTask, InitializingB
 		// Register summed data file
 		FileRegistrarHelper.registerFile(summedDataFile.getAbsolutePath());
 		
-		// Plot summed data
-		final int numChannels = summedData.length;
-		double[] angles = new double[numChannels];
-		double[] counts = new double[numChannels];
-		for (int i=0; i<numChannels; i++) {
-			angles[i] = summedData[i][0];
-			counts[i] = summedData[i][1];
-		}
-		String name2 = FilenameUtils.getName(summedDataFile.getAbsolutePath());
-		DoubleDataset anglesDataset = new DoubleDataset(angles);
-		anglesDataset.setName("angle");
-		DoubleDataset countsDataset = new DoubleDataset(counts);
-		countsDataset.setName(name2);
-		// Swing plot panel
-		Plotter.plot(panelName, anglesDataset, countsDataset);
-		try {
-			//RCP plot panel
-			SDAPlotter.plot(panelName, anglesDataset, countsDataset);
-		} catch (Exception e) {
-			logger.error("RCP plot failed.", e);
-			throw new DeviceException("RCP plot failed.", e);
+		if (isUsePlotServer()) {
+			// Plot summed data
+			final int numChannels = summedData.length;
+			double[] angles = new double[numChannels];
+			double[] counts = new double[numChannels];
+			for (int i = 0; i < numChannels; i++) {
+				angles[i] = summedData[i][0];
+				counts[i] = summedData[i][1];
+			}
+			String name2 = FilenameUtils.getName(summedDataFile.getAbsolutePath());
+			DoubleDataset anglesDataset = new DoubleDataset(angles);
+			anglesDataset.setName("angle");
+			DoubleDataset countsDataset = new DoubleDataset(counts);
+			countsDataset.setName(name2);
+			// Swing plot panel
+			Plotter.plot(panelName, anglesDataset, countsDataset);
+			try {
+				// RCP plot panel
+				SDAPlotter.plot(panelName, anglesDataset, countsDataset);
+			} catch (Exception e) {
+				logger.error("RCP plot failed.", e);
+				throw new DeviceException("RCP plot failed.", e);
+			}
+		} else {
+			if (getEventAdmin()!=null) {
+				((ScriptControllerBase)getEventAdmin()).update(this, new PlotDataFileEvent(summedDataFile.getAbsolutePath(), true));
+			}
 		}
 	}
 	@Override
@@ -146,8 +164,16 @@ public class RCPPlotSummingDataTask implements DataProcessingTask, InitializingB
 	}
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		if (getPanelName() == null) {
-			throw new IllegalStateException("You have not specified which panel the data should be plotted in");
+		if (isUsePlotServer()) {
+			//for plot initiated from server
+			if (getPanelName() == null) {
+				throw new IllegalArgumentException("You have not specified which panel the data should be plotted in");
+			}
+		} else {
+			//to tell RCP client data file name to plot 
+			if (getEventAdmin() == null) {
+				throw new IllegalArgumentException("You have not specified a Scriptcontroller as EventAdmin.");
+			}
 		}
 	}
 
@@ -183,6 +209,22 @@ public class RCPPlotSummingDataTask implements DataProcessingTask, InitializingB
 		if (InterfaceProvider.getTerminalPrinter() != null) {
 			InterfaceProvider.getTerminalPrinter().print(msg);
 		}
+	}
+
+	public boolean isUsePlotServer() {
+		return usePlotServer;
+	}
+
+	public void setUsePlotServer(boolean usePlotServer) {
+		this.usePlotServer = usePlotServer;
+	}
+
+	public Scriptcontroller getEventAdmin() {
+		return eventAdmin;
+	}
+
+	public void setEventAdmin(Scriptcontroller eventAdmin) {
+		this.eventAdmin = eventAdmin;
 	}
 
 }
