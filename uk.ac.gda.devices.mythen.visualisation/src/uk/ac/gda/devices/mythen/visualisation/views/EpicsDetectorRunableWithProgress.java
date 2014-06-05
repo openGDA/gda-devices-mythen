@@ -55,26 +55,26 @@ import uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsDoubleDataListener;
  *Example of Spring configuration:
  *<pre>
  * {@code
- * <bean id="epicsdetectormonitor" class="uk.ac.gda.devices.mythen.visualisation.views.EpicsDetectorRunableWithProgress">
- * 	<property name="exposureTimeListener" ref="exposureTimeListener"/> <!--essential-->
- * 	<property name="timeRemainingListener" ref="timeRemainingListener"/> <!--essential-->
- * 	<property name="epicsProcessName" value="mythen acquiring"/> <!--essential-->
- * 	<property name="stopScannable" ref="stopscannable"/> <!--essential-->
- * </bean>
+<bean id="epicsdetectormonitor" class="uk.ac.gda.devices.mythen.visualisation.views.EpicsDetectorRunableWithProgress">
+	<property name="exposureTimeListener" ref="exposureTimeListener"/> <!--essential-->
+	<property name="timeRemainingListener" ref="timeRemainingListener"/> <!--essential-->
+	<property name="epicsProcessName" value="mythen acquiring"/> <!--essential-->
+	<property name="stopScannable" ref="stopscannable"/> <!--essential-->
+</bean>
  * }
  * </pre>
  * where ref bean may look like the following:
  * <pre> 
  * {@code 
- * <bean id="stopscannable" class="gda.device.scannable.EpicsScannable">
- * 	<property name="pvName" value="BL11I-EA-DET-03:DET:Acquire"/>
- * </bean>
- * <bean id="timeRemainingListener" class="uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsDoubleDataListener">
- * 	<property name="pvName" value="BL11I-EA-DET-03:DET:TimeRemaining_RBV"/>
- * </bean>
- * <bean id="exposureTimeListener" class="uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsDoubleDataListener">
- * 	<property name="pvName" value="BL11I-EA-DET-03:DET:AcquireTime_RBV"/>
- * </bean>
+<bean id="stopscannable" class="gda.device.scannable.EpicsScannable">
+	<property name="pvName" value="BL11I-EA-DET-03:DET:Acquire"/>
+</bean>
+<bean id="timeRemainingListener" class="uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsDoubleDataListener">
+	<property name="pvName" value="BL11I-EA-DET-03:DET:TimeRemaining_RBV"/>
+</bean>
+<bean id="exposureTimeListener" class="uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsDoubleDataListener">
+	<property name="pvName" value="BL11I-EA-DET-03:DET:AcquireTime_RBV"/>
+</bean>
  * }
  * </pre>
  * 
