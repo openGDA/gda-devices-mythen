@@ -11,10 +11,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsDoubleDataListener;
+import uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsIntegerDataListener;
 
 
 /**
- * Live plotting of detector data during acquisition. 
+ * This view consists of two <code>Composite</code> parts. The top part shows plot of 
+ * detector data from data file collected by a server process, and the bottom part displays 
+ * the progress of detector acquiring for data if acquisition is over 1 seconds.
  */
 public class LivePlotView extends ViewPart {
 
@@ -25,13 +28,16 @@ public class LivePlotView extends ViewPart {
 	private double xAxisMax=100.000;
 	private String eventAdminName;
 	private IRunnableWithProgress epicsProgressMonitor;
+	private EpicsIntegerDataListener startListener;	
 	
 	private LivePlotComposite plotComposite;
 
 	private EpicsDetectorProgressMonitor progressMonitor;
 	private EpicsDoubleDataListener exposureTimeListener;
 	private EpicsDoubleDataListener timeRemainingListener;
-	private EpicsScannable stopScannable;	
+	private EpicsScannable stopScannable;
+	private String taskName;
+
 
 	public LivePlotView() {
 		setTitleToolTip("live display of 1D detector data");
@@ -53,12 +59,16 @@ public class LivePlotView extends ViewPart {
 			plotComposite.setxAxisMin(getxAxisMin());
 			plotComposite.setxAxisMax(getxAxisMax());
 			plotComposite.setEventAdminName(eventAdminName);
+			plotComposite.setEpicsProgressMonitor(epicsProgressMonitor);
+			plotComposite.setStartListener(getStartListener());
 			plotComposite.initialise();
-			progressMonitor=new EpicsDetectorProgressMonitor(rootComposite, null, true);
+			progressMonitor=new EpicsDetectorProgressMonitor(rootComposite, SWT.None);
+			progressMonitor.setStartListener(getStartListener());
 			progressMonitor.setExposureTimeListener(exposureTimeListener);
 			progressMonitor.setTimeRemainingListener(timeRemainingListener);
 			progressMonitor.setStopScannable(getStopScannable());
-			progressMonitor.addIObservers();
+			progressMonitor.setTaskName(taskName);
+			progressMonitor.initialise();
 		} catch (Exception e) {
 			logger.error("Cannot create live plot composite.", e);
 		}
@@ -92,7 +102,6 @@ public class LivePlotView extends ViewPart {
 	public void setxAxisMax(double xAxisMax) {
 		this.xAxisMax = xAxisMax;
 	}
-
 
 	public IRunnableWithProgress getEpicsProgressMonitor() {
 		return epicsProgressMonitor;
@@ -132,6 +141,22 @@ public class LivePlotView extends ViewPart {
 
 	public void setTimeRemainingListener(EpicsDoubleDataListener timeRemainingListener) {
 		this.timeRemainingListener = timeRemainingListener;
+	}
+
+	public EpicsIntegerDataListener getStartListener() {
+		return startListener;
+	}
+
+	public void setStartListener(EpicsIntegerDataListener startListener) {
+		this.startListener = startListener;
+	}
+
+	public String getTaskName() {
+		return taskName;
+	}
+
+	public void setTaskName(String taskName) {
+		this.taskName = taskName;
 	}
 
 }
