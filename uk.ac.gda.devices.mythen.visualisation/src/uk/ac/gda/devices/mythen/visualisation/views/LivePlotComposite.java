@@ -51,7 +51,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.diamond.scisoft.analysis.dataset.AbstractDataset;
 import uk.ac.diamond.scisoft.analysis.dataset.DoubleDataset;
-import uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsIntegerDataListener;
+import uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsEnumDataListener;
 import uk.ac.gda.devices.mythen.visualisation.event.PlotDataFileEvent;
 
 /**
@@ -70,7 +70,7 @@ public class LivePlotComposite extends Composite implements IObserver {
 	private double xAxisMax = 100.000;
 	private String eventAdminName;
 	private IRunnableWithProgress epicsProgressMonitor;
-	private EpicsIntegerDataListener startListener;
+	private EpicsEnumDataListener startListener;
 
 	private Scriptcontroller eventAdmin; // used for passing event from server to client without the need to
 												// CORBArise this class.
@@ -221,8 +221,8 @@ public class LivePlotComposite extends Composite implements IObserver {
 				}
 			};
 			executor.execute(command);
-		} else if (source==getStartListener() && arg instanceof Integer) {
-			if (((Integer)arg).intValue()==1 && getEpicsProgressMonitor() != null) {
+		} else if (source==getStartListener() && arg instanceof Short) {
+			if (((Short)arg).shortValue()==1 && getEpicsProgressMonitor() != null) {
 				try { 
 					IProgressService service = (IProgressService) workbenchpart.getSite().getService(IProgressService.class);
 					service.run(true, true, getEpicsProgressMonitor());
@@ -249,11 +249,11 @@ public class LivePlotComposite extends Composite implements IObserver {
 		this.eventAdminName = eventAdminName;
 	}
 
-	public EpicsIntegerDataListener getStartListener() {
+	public EpicsEnumDataListener getStartListener() {
 		return startListener;
 	}
 
-	public void setStartListener(EpicsIntegerDataListener startListener) {
+	public void setStartListener(EpicsEnumDataListener startListener) {
 		this.startListener = startListener;
 	}
 

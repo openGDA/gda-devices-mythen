@@ -30,7 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsDoubleDataListener;
-import uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsIntegerDataListener;
+import uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsEnumDataListener;
 import uk.ac.gda.devices.mythen.visualisation.views.EpicsDetectorRunableWithProgress;
 import uk.ac.gda.devices.mythen.visualisation.views.LivePlotView;
 /**
@@ -71,7 +71,7 @@ import uk.ac.gda.devices.mythen.visualisation.views.LivePlotView;
    <bean id="exposureTimeListener" class="uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsDoubleDataListener">
    	<property name="pvName" value="BL11I-EA-DET-03:DET:AcquireTime_RBV"/>
    </bean>
-   <bean id="startListener" class="uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsIntegerDataListener">
+   <bean id="startListener" class="uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsEnumDataListener">
    	<property name="pvName" value="BL11I-EA-DET-03:DET:Acquire"/>
    </bean>
    }
@@ -89,7 +89,7 @@ public class LivePlotViewFactory implements FindableExecutableExtension {
 	private double xAxisMax=100.000;
 	private String eventAdminName;
 	private IRunnableWithProgress epicsProgressMonitor;
-	private EpicsIntegerDataListener startListener;	
+	private EpicsEnumDataListener startListener;	
 	
 	private EpicsDoubleDataListener exposureTimeListener;
 	private EpicsDoubleDataListener timeRemainingListener;
@@ -194,11 +194,11 @@ public class LivePlotViewFactory implements FindableExecutableExtension {
 		this.eventAdminName = eventAdminName;
 	}
 
-	public EpicsIntegerDataListener getStartListener() {
+	public EpicsEnumDataListener getStartListener() {
 		return startListener;
 	}
 
-	public void setStartListener(EpicsIntegerDataListener startListener) {
+	public void setStartListener(EpicsEnumDataListener startListener) {
 		this.startListener = startListener;
 	}
 

@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 
 import uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsDoubleDataListener;
-import uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsIntegerDataListener;
+import uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsEnumDataListener;
 /**
  * A progress monitor composite for monitoring and reporting an EPICS area detector acquiring progress.
  * 
@@ -57,7 +57,7 @@ public class EpicsDetectorProgressMonitor extends Composite implements IObserver
 
 	private static final Logger logger = LoggerFactory.getLogger(EpicsDetectorProgressMonitor.class);
 	//Spring configurable properties
-	private EpicsIntegerDataListener startListener;
+	private EpicsEnumDataListener startListener;
 	private EpicsDoubleDataListener exposureTimeListener;
 	private EpicsDoubleDataListener timeRemainingListener;
 	private EpicsScannable stopScannable;  
@@ -190,11 +190,11 @@ public class EpicsDetectorProgressMonitor extends Composite implements IObserver
 		this.timeRemainingListener = timeRemainingListener;
 	}
 
-	public EpicsIntegerDataListener getStartListener() {
+	public EpicsEnumDataListener getStartListener() {
 		return startListener;
 	}
 
-	public void setStartListener(EpicsIntegerDataListener startListener) {
+	public void setStartListener(EpicsEnumDataListener startListener) {
 		this.startListener = startListener;
 	}
 }

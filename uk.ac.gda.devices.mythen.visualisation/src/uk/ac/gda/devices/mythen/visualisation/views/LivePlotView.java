@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsDoubleDataListener;
-import uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsIntegerDataListener;
+import uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsEnumDataListener;
 
 
 /**
@@ -28,7 +28,7 @@ public class LivePlotView extends ViewPart {
 	private double xAxisMax=100.000;
 	private String eventAdminName;
 	private IRunnableWithProgress epicsProgressMonitor;
-	private EpicsIntegerDataListener startListener;	
+	private EpicsEnumDataListener startListener;	
 	
 	private LivePlotComposite plotComposite;
 
@@ -143,11 +143,11 @@ public class LivePlotView extends ViewPart {
 		this.timeRemainingListener = timeRemainingListener;
 	}
 
-	public EpicsIntegerDataListener getStartListener() {
+	public EpicsEnumDataListener getStartListener() {
 		return startListener;
 	}
 
-	public void setStartListener(EpicsIntegerDataListener startListener) {
+	public void setStartListener(EpicsEnumDataListener startListener) {
 		this.startListener = startListener;
 	}
 
