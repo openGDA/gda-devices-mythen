@@ -26,35 +26,40 @@ import java.lang.reflect.InvocationTargetException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.operation.IRunnableContext;
 import org.eclipse.jface.operation.IRunnableWithProgress;
+import org.eclipse.ui.progress.IProgressService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 
 import uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsDoubleDataListener;
-import uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsIntegerDataListener;
 
 /**
  * An implementation of <code>IRunnableWithProgress</code> interface whose instances 
- * are intended to be used to monitor a long-running operation in EPICS IOC.
+ * are intended to be used to report EPICS area detector acquiring progress.
  * 
- * Rather than directly run the long-running operation, the <code>run</code> method 
- * is used to update progress monitor with data pulled from the monitored PVs provided 
- * by an external EPICS process.
+ * the <code>run</code> method is implemented here to update progress monitor with data 
+ * pulled from EPICS PVs provided by an external EPICS process.
  *  
  * The <code>run</code> method is usually not invoked directly, but rather by
  * passing the instance of <code>EpicsRunableWithProgress</code> to the <code>run</code> 
  * method of an <code>IRunnableContext</code>, which provides the UI for the progress 
  * monitor and Cancel button.
+ * 
+ * for example to add it to eclipse's {@link IProgressService}:
+ * {@code
+ * IProgressService service = (IProgressService) workbenchpart.getSite().getService(IProgressService.class);
+ * service.run(true, true, epicsdetectormonitor);
+ * }
+ * Because the actual process is external, this method call must be triggered by EPICS detector start command when used. 
  *<p>
  *Example of Spring configuration:
  *<pre>
  * {@code
- * <bean id="epicsprogressmonitor" class="uk.ac.gda.client.hrpd.views.EpicsRunableWithProgress">
- * 	<property name="totalWorkListener" ref="totalworklistener"/> <!--essential-->
- * 	<property name="workedSoFarListener" ref="worklistener"/> <!--essential-->
- * 	<property name="messageListener" ref="messagelistener"/> <!--optional-->
- * 	<property name="epicsProcessName" value="cvscan"/> <!--optional-->
- * 	<property name="stopScannable" ref="stopscannable"/> <!--optional-->
+ * <bean id="epicsdetectormonitor" class="uk.ac.gda.devices.mythen.visualisation.views.EpicsDetectorRunableWithProgress">
+ * 	<property name="exposureTimeListener" ref="exposureTimeListener"/> <!--essential-->
+ * 	<property name="timeRemainingListener" ref="timeRemainingListener"/> <!--essential-->
+ * 	<property name="epicsProcessName" value="mythen acquiring"/> <!--essential-->
+ * 	<property name="stopScannable" ref="stopscannable"/> <!--essential-->
  * </bean>
  * }
  * </pre>
@@ -62,16 +67,13 @@ import uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsIntegerDataListener;
  * <pre> 
  * {@code 
  * <bean id="stopscannable" class="gda.device.scannable.EpicsScannable">
- * 	<property name="pvName" value="BL11I-EA-MAC-01:ABORT"/>
+ * 	<property name="pvName" value="BL11I-EA-DET-03:DET:Acquire"/>
  * </bean>
- * <bean id="messagelistener" class="uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsStringDataListener">
- * 	<property name="pvName" value="BL11I-EA-MAC-01:MESSAGE"/>
+ * <bean id="timeRemainingListener" class="uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsDoubleDataListener">
+ * 	<property name="pvName" value="BL11I-EA-DET-03:DET:TimeRemaining_RBV"/>
  * </bean>
- * <bean id="worklistener" class="uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsIntegerDataListener">
- * 	<property name="pvName" value="BL11I-EA-MAC-01:GPULSES"/>
- * </bean>
- * <bean id="totalworklistener" class="uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsIntegerDataListener">
- * 	<property name="pvName" value="BL11I-EA-MAC-01:NPULSES"/>
+ * <bean id="exposureTimeListener" class="uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsDoubleDataListener">
+ * 	<property name="pvName" value="BL11I-EA-DET-03:DET:AcquireTime_RBV"/>
  * </bean>
  * }
  * </pre>
@@ -86,22 +88,18 @@ public class EpicsDetectorRunableWithProgress implements IRunnableWithProgress, 
 	private String epicsProcessName; //task name
 	private EpicsScannable stopScannable;
 	
-	private int totalWork;
-	private int work;
-	private int lastWorked;
-
 	public EpicsDetectorRunableWithProgress() {
 	}
 
 	@Override
 	public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
 		try {
-			totalWork = (int) (getExposureTimeListener().getValue()*1000);
+			int totalWork = (int) (getExposureTimeListener().getValue()*1000);
 			//when exposure time less than 1 second, do not show progress.
 			if (totalWork<1000) return; 
 			monitor.beginTask(getEpicsProcessName(), totalWork);
-			lastWorked = 0;
-			work = totalWork-(int) (getTimeRemainingListener().getValue()*1000);
+			int lastWorked = 0;
+			int work = totalWork-(int) (getTimeRemainingListener().getValue()*1000);
 			while (work < totalWork) {
 				if (monitor.isCanceled()) {
 					if (getStopScannable() != null) {
@@ -118,6 +116,7 @@ public class EpicsDetectorRunableWithProgress implements IRunnableWithProgress, 
 					lastWorked = work;
 				}
 				Thread.sleep(1000);
+				work = totalWork-(int) (getTimeRemainingListener().getValue()*1000);
 			}
 		} finally {
 			monitor.done();

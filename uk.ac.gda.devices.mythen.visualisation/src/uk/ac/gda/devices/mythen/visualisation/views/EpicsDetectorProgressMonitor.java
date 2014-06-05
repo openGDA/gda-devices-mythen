@@ -21,182 +21,130 @@ package uk.ac.gda.devices.mythen.visualisation.views;
 import gda.device.DeviceException;
 import gda.device.scannable.EpicsScannable;
 import gda.observable.IObserver;
-import gov.aps.jca.event.MonitorListener;
 
-import org.eclipse.jface.dialogs.ProgressIndicator;
-import org.eclipse.jface.resource.ImageDescriptor;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import org.eclipse.jface.wizard.ProgressMonitorPart;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Cursor;
-import org.eclipse.swt.graphics.FontMetrics;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Layout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 
 import uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsDoubleDataListener;
+import uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsIntegerDataListener;
 /**
- * A progress monitor for monitoring or reporting an EPICS process progress state.
- * It provides a label displaying the task and subtask name, and a progress indicator to show progress.
- * The progress reporting is driven by EPICS events monitored via {@link MonitorListener} instances,
+ * A progress monitor composite for monitoring and reporting an EPICS area detector acquiring progress.
+ * 
+ * The actual monitor process is started by trigger from EPICS detector's 'start' PV. The monitor
+ * provides a label displaying the task name, and a progress indicator to show progress.
+ * 
  * <p>
- * To create an instance of this class, one must provide:
- * <li> a total work listener using <code>setTotalWorkListener(EpicsIntegerDataListener)</code>;</li>
- * <li> a work listener using <code>setWorkedSoFarListener(EpicsIntegerDataListener)</code>;</li>
- * <br>
- * You may optionally provide:
- * <li> a message listener using <code>setMessageListener(EpicsStringDataListener)</code> if there are messages related to the EPICS process;</li>
- * <li> a STOP scannable using <code>setStopScannable(EpicsScannable)</code> if you want the CANCEL operation to stop EPICS process;</li>
+ * To use this class, one must provide:
+ * <li> an EPICS detector start listener using <code>setStartListener(EpicsIntegerDataListener)</code> and add an instance of this class as observer of it;</li>
+ * <li> an EPICS detector exposure time listener using <code>setExposureTimeListener(EpicsDoubleDataListener)</code> which must be configured to poll;</li>
+ * <li> an EPICS detector time remaining listener using <code>setTimeRemainingListener(EpicsDoubleDataListener)</code> which must be configured to poll;</li>
+ * <li> a STOP scannable using <code>setStopScannable(EpicsScannable)</code> to support CANCEL operation;</li>
+ * <li> a task name using <code>setTaskName(String)</code>.
+ * </p>
  *  
  */
 
-public class EpicsDetectorProgressMonitor extends ProgressMonitorPart implements IObserver, InitializingBean{
+public class EpicsDetectorProgressMonitor extends Composite implements IObserver, InitializingBean{
+
 	private static final Logger logger = LoggerFactory.getLogger(EpicsDetectorProgressMonitor.class);
 	//Spring configurable properties
+	private EpicsIntegerDataListener startListener;
 	private EpicsDoubleDataListener exposureTimeListener;
 	private EpicsDoubleDataListener timeRemainingListener;
-	private EpicsScannable stopScannable; //optional if no Cancel, 
-	private Button stopButton;
-	private boolean hasStopButton = false;
-
-	public EpicsDetectorProgressMonitor(Composite parent, Layout layout, boolean allowStopButton) {
-		super(parent, layout);
-		// cannot use base class stopButton due to additional action to stop EPICS process.
-		this.hasStopButton = allowStopButton;
-		initialize(layout, SWT.DEFAULT);
+	private EpicsScannable stopScannable;  
+	private String taskName;
+	
+	private ProgressMonitorPart monitor;
+	
+	private ExecutorService executor;
+	
+	public EpicsDetectorProgressMonitor(Composite parent, int style) {
+		super(parent, style);
+		monitor=new ProgressMonitorPart(parent, null, true);
 	}
-
-	SelectionAdapter listener = new SelectionAdapter() {
+	
+	public void initialise() {
+		if (getStartListener()!=null) {
+			getStartListener().addIObserver(this);
+		}
+		executor= Executors.newSingleThreadExecutor();
+	}
+	
+	@Override
+	public void dispose() {
+		executor.shutdown();
+		try {
+			boolean terminated = executor.awaitTermination(30, TimeUnit.SECONDS);
+			if (!terminated) {
+				throw new TimeoutException("failed to terminate executor in time.");
+			}
+		} catch (InterruptedException | TimeoutException e) {
+			logger.error("EPICS detector monitor failed in executor shutdown.", e);
+			throw new RuntimeException("EPICS detector monitor fail in executor shutdown.", e);
+		}
+		super.dispose();
+	}
+	//using Callable instead of Runnable as progress cancel is expected to throw InterruptedException.
+	Callable<Object> callable=new Callable<Object>() {
+		
 		@Override
-		public void widgetSelected(SelectionEvent e) {
-				try {
-					if (getStopScannable()!=null) {
-						getStopScannable().moveTo(0);
+		public Object call() throws Exception {
+			try {
+				int totalWork = (int) (getExposureTimeListener().getValue()*1000);
+				//when exposure time less than 1 second, do not show progress.
+				if (totalWork<1000) return null; 
+				monitor.beginTask(getTaskName(), totalWork);
+				int lastWorkedTo = 0;
+				int work = totalWork-(int) (getTimeRemainingListener().getValue()*1000);
+				while (work < totalWork) {
+					if (monitor.isCanceled()) {
+						if (getStopScannable() != null) {
+							try {
+								getStopScannable().moveTo(0);
+							} catch (DeviceException e) {
+								logger.error("Failed to stop EPICS operation.", e);
+							}
+						}
+						throw new InterruptedException(getTaskName() + " is aborted by progress cancel operation.");
 					}
-	    			if (stopButton != null) {
-	    				stopButton.setEnabled(false);
-	    			}				
-				} catch (DeviceException e1) {
-					logger.error("Failed to stop EPICS operation.", e1);
+					if (work != lastWorkedTo) {
+						monitor.worked(work - lastWorkedTo);
+						lastWorkedTo = work;
+					}
+					Thread.sleep(1000);
+					work = totalWork-(int) (getTimeRemainingListener().getValue()*1000);
 				}
-    			// on cancel operation, must finish beginTask
-				done(); 
-				lastWorkedTo=0;
-				totalWork=0;
+			} finally {
+				monitor.done();
+			}
+			return null;
 		}
 	};
 
-	/**
-	 * Creates the progress monitor's UI parts and layouts them according to the given layout. If the layout is
-	 * <code>null</code> the part's default layout is used.
-	 * 
-	 * @param layout
-	 *            The layout for the receiver.
-	 * @param progressIndicatorHeight
-	 *            The suggested height of the indicator
-	 */
-	@Override
-	protected void initialize(Layout layout, int progressIndicatorHeight) {
-		if (layout == null) {
-			GridLayout l = new GridLayout();
-			l.marginWidth = 0;
-			l.marginHeight = 0;
-			layout = l;
-		}
-		int numColumns = 1;
-		if (hasStopButton)
-			numColumns++;
-		setLayout(layout);
-
-		if (layout instanceof GridLayout)
-			((GridLayout) layout).numColumns = numColumns;
-
-		fLabel = new Label(this, SWT.LEFT);
-		fLabel.setLayoutData(new GridData(GridData.FILL, GridData.CENTER, true, false, numColumns, 1));
-
-		if (progressIndicatorHeight == SWT.DEFAULT) {
-			GC gc = new GC(fLabel);
-			FontMetrics fm = gc.getFontMetrics();
-			gc.dispose();
-			progressIndicatorHeight = fm.getHeight();
-		}
-
-		fProgressIndicator = new ProgressIndicator(this);
-		GridData gd = new GridData();
-		gd.horizontalAlignment = GridData.FILL;
-		gd.grabExcessHorizontalSpace = true;
-		gd.grabExcessVerticalSpace = false;
-		gd.verticalAlignment = GridData.CENTER;
-		gd.heightHint = progressIndicatorHeight;
-		fProgressIndicator.setLayoutData(gd);
-
-		if (hasStopButton) {
-			stopButton = new Button(this, SWT.PUSH);
-			stopButton.addSelectionListener(listener);
-			final Image stopImage = ImageDescriptor
-					.createFromFile(EpicsDetectorProgressMonitor.class, "images/stop.gif").createImage(getDisplay()); //$NON-NLS-1$
-			final Cursor arrowCursor = new Cursor(this.getDisplay(), SWT.CURSOR_ARROW);
-			stopButton.setCursor(arrowCursor);
-			stopButton.setImage(stopImage);
-			stopButton.addDisposeListener(new DisposeListener() {
-				@Override
-				public void widgetDisposed(DisposeEvent e) {
-					stopImage.dispose();
-					arrowCursor.dispose();
-				}
-			});
-			stopButton.setEnabled(false);
-			stopButton.setToolTipText("Cancel operation"); //$NON-NLS-1$
-			attachToCancelComponent(stopButton);
-		}
+	public void setTaskName(String taskName) {
+		this.taskName = taskName;
 	}
 
-	public void addIObservers() {
-		if (getExposureTimeListener()!=null) {
-			getExposureTimeListener().addIObserver(this);
-		}
-		if (getTimeRemainingListener()!=null) {
-			getTimeRemainingListener().addIObserver(this);
-		}
-	}
-	
-	int lastWorkedTo=0;
-	int totalWork=0;
 	@Override
 	public void update(Object source, Object arg) {
-		if (source==getExposureTimeListener() && arg instanceof Double) {
-			totalWork=(int) ((double) arg*1000);
-			if (totalWork!=0) {
-				beginTask(getTaskName(), totalWork);
-				stopButton.setEnabled(true);
+		if (source==getStartListener() && arg instanceof Integer) {
+			if (((Integer)arg).intValue()==1) {
+				executor.submit(callable);
 			}
-		} else if(source==getTimeRemainingListener() && arg instanceof Double) {
-			int timeremain=(int) ((double) arg*1000);
-			int workedSoFar=totalWork-timeremain;
-			if (workedSoFar<totalWork) {
-				worked(workedSoFar-lastWorkedTo);
-				lastWorkedTo=workedSoFar;
-			} else {
-				done();
-				lastWorkedTo=0;
-				totalWork=0;
-			}
-		} 
+		}
 	}
 
 	private String getTaskName() {
-		return this.fTaskName;
+		return this.taskName;
 	}
 
 	public EpicsScannable getStopScannable() {
@@ -209,14 +157,20 @@ public class EpicsDetectorProgressMonitor extends ProgressMonitorPart implements
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
+		if (getStartListener()==null) {
+			throw new IllegalArgumentException("startListener must not be null.");
+		}
 		if (getExposureTimeListener()==null) {
 			throw new IllegalArgumentException("exposureTimeListener must not be null.");
 		}
 		if (getTimeRemainingListener()==null) {
 			throw new IllegalArgumentException("timeRemainingListener must not be null.");
 		}
-		if (hasStopButton && stopScannable==null) {
+		if (stopScannable==null) {
 			throw new IllegalArgumentException("stopScannable must not be null.");
+		}
+		if (getTaskName()== null) {
+			throw new IllegalArgumentException("task name must not be null.");
 		}
 	}
 
@@ -234,5 +188,13 @@ public class EpicsDetectorProgressMonitor extends ProgressMonitorPart implements
 
 	public void setTimeRemainingListener(EpicsDoubleDataListener timeRemainingListener) {
 		this.timeRemainingListener = timeRemainingListener;
+	}
+
+	public EpicsIntegerDataListener getStartListener() {
+		return startListener;
+	}
+
+	public void setStartListener(EpicsIntegerDataListener startListener) {
+		this.startListener = startListener;
 	}
 }

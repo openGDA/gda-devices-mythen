@@ -23,6 +23,7 @@ import gda.factory.Finder;
 import gda.jython.scriptcontroller.Scriptcontroller;
 import gda.observable.IObserver;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -44,15 +45,22 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IWorkbenchPart;
+import org.eclipse.ui.progress.IProgressService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.diamond.scisoft.analysis.dataset.AbstractDataset;
 import uk.ac.diamond.scisoft.analysis.dataset.DoubleDataset;
+import uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsIntegerDataListener;
 import uk.ac.gda.devices.mythen.visualisation.event.PlotDataFileEvent;
 
 /**
- * Live plot composite for plotting detector data from the data file notified by the server data collection process.
+ * Live plot composite for plotting detector data from the data file collected by a server collection process.
+ * An instance of this class must be add as an observer of the server process, e.g. a detector that produces 
+ * the data file and handle the plot of data from the data file on notification from the server.
+ * 
+ * It may also <b>OPTIONAL</b> be wired up with an instance of {@link EpicsDetectorRunableWithProgress}
+ * to display detector acquiring progress on the status bar using {@link IProgressService} interface.
  */
 public class LivePlotComposite extends Composite implements IObserver {
 	private Logger logger = LoggerFactory.getLogger(LivePlotComposite.class);
@@ -60,19 +68,18 @@ public class LivePlotComposite extends Composite implements IObserver {
 	private String plotName = "DetectorData";
 	private double xAxisMin = 0.000;
 	private double xAxisMax = 100.000;
-
 	private String eventAdminName;
 	private IRunnableWithProgress epicsProgressMonitor;
+	private EpicsIntegerDataListener startListener;
 
 	private Scriptcontroller eventAdmin; // used for passing event from server to client without the need to
 												// CORBArise this class.
 	private IPlottingSystem plottingSystem;
-	private IWorkbenchPart workbenchpart;
 	private ExecutorService executor;
 
 	public LivePlotComposite(IWorkbenchPart part, Composite parent, int style) throws Exception {
 		super(parent, style);
-		this.workbenchpart = part;
+		this.workbenchpart=part;
 		this.setBackground(ColorConstants.white);
 
 		GridLayout layout = new GridLayout();
@@ -151,7 +158,8 @@ public class LivePlotComposite extends Composite implements IObserver {
 	}
 
 	List<AbstractDataset> plotDatasets = new ArrayList<AbstractDataset>();
-	private void plotFinalData(final String filename, final boolean clearFirst) {
+	private IWorkbenchPart workbenchpart;
+	private void plotData(final String filename, final boolean clearFirst) {
 
 		double[][] data = MythenDataFileUtils.readMythenProcessedDataFile(filename, false);
 		final int numChannels = data.length;
@@ -209,10 +217,19 @@ public class LivePlotComposite extends Composite implements IObserver {
 				
 				@Override
 				public void run() {
-					plotFinalData(filename, clearFirst);
+					plotData(filename, clearFirst);
 				}
 			};
 			executor.execute(command);
+		} else if (source==getStartListener() && arg instanceof Integer) {
+			if (((Integer)arg).intValue()==1 && getEpicsProgressMonitor() != null) {
+				try { 
+					IProgressService service = (IProgressService) workbenchpart.getSite().getService(IProgressService.class);
+					service.run(true, true, getEpicsProgressMonitor());
+				} catch (InvocationTargetException | InterruptedException e) {
+					logger.error("TODO put description of error here", e);
+				}
+			}
 		}
 	}
 
@@ -230,6 +247,14 @@ public class LivePlotComposite extends Composite implements IObserver {
 
 	public void setEventAdminName(String eventAdminName) {
 		this.eventAdminName = eventAdminName;
+	}
+
+	public EpicsIntegerDataListener getStartListener() {
+		return startListener;
+	}
+
+	public void setStartListener(EpicsIntegerDataListener startListener) {
+		this.startListener = startListener;
 	}
 
 }
