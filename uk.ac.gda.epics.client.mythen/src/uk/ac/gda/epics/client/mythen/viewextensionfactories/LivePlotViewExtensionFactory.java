@@ -16,20 +16,20 @@
  * with GDA. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package uk.ac.gda.devices.mythen.visualisation.viewextensionfactories;
+package uk.ac.gda.epics.client.mythen.viewextensionfactories;
 
 import gda.rcp.views.ViewFactory;
 
 import org.eclipse.ui.ExtensionFactory;
 
-import uk.ac.gda.devices.mythen.visualisation.viewfactories.LivePlotViewFactory;
+import uk.ac.gda.epics.client.mythen.viewfactories.LivePlotViewFactory;
 
 /**
  * an implementation of {@link ExtensionFactory} to register an instance of {@link LivePlotViewFactory} to
  * the extension-point {@link org.eclipse.ui.views}. The format for this extension contribution is
- * {@code uk.ac.gda.devices.mythen.visualisation.viewextensionfactories.LivePlotViewExtensionFactory:mythenliveplotviewfactory}
+ * {@code uk.ac.gda.epics.client.mythen.viewextensionfactories.LivePlotViewExtensionFactory:mythenliveplotviewfactory}
  * where variable {@code mythenliveplotviewfactory} is an instance of {@link LivePlotViewFactory}.
  */
 public class LivePlotViewExtensionFactory extends ViewFactory {
-	public static final String ID = "uk.ac.gda.devices.mythen.visualisation.views.liveplotview";
+	public static final String ID = "uk.ac.gda.epics.client.mythen.views.liveplotview";
 }

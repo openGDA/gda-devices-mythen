@@ -16,7 +16,7 @@
  * with GDA. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package uk.ac.gda.devices.mythen.visualisation.viewfactories;
+package uk.ac.gda.epics.client.mythen.viewfactories;
 
 import gda.device.scannable.EpicsScannable;
 import gda.jython.scriptcontroller.Scriptcontroller;
@@ -31,8 +31,8 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsDoubleDataListener;
 import uk.ac.gda.client.hrpd.epicsdatamonitor.EpicsEnumDataListener;
-import uk.ac.gda.devices.mythen.visualisation.views.EpicsDetectorRunableWithProgress;
-import uk.ac.gda.devices.mythen.visualisation.views.LivePlotView;
+import uk.ac.gda.epics.client.mythen.views.EpicsDetectorRunableWithProgress;
+import uk.ac.gda.epics.client.mythen.views.LivePlotView;
 /**
  * a factory for creating a {@link LivePlotView} instance. 
  * 

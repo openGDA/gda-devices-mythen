@@ -1,4 +1,4 @@
-package uk.ac.gda.devices.mythen.visualisation.views;
+package uk.ac.gda.epics.client.mythen.views;
 
 import gda.device.scannable.EpicsScannable;
 

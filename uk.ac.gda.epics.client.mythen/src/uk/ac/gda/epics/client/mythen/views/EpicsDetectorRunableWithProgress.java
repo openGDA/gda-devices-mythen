@@ -16,7 +16,7 @@
  * with GDA. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package uk.ac.gda.devices.mythen.visualisation.views;
+package uk.ac.gda.epics.client.mythen.views;
 
 import gda.device.DeviceException;
 import gda.device.scannable.EpicsScannable;
