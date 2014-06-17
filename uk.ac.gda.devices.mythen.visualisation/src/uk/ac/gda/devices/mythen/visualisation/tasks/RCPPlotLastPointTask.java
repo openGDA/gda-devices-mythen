@@ -26,6 +26,7 @@ import gda.device.detector.mythen.tasks.AtPointEndTask;
 import gda.jython.scriptcontroller.ScriptControllerBase;
 import gda.jython.scriptcontroller.Scriptcontroller;
 
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -76,7 +77,10 @@ public class RCPPlotLastPointTask implements AtPointEndTask, InitializingBean {
 				logger.error("Exception throwed on RCPPlotter.plot to panel " + panelName, e);
 			}
 		} else {
-			Joiner name=Joiner.on(File.pathSeparator).skipNulls();
+			if (FilenameUtils.getExtension(filename) == "") {
+				filename=filename+".dat";
+			}
+			Joiner name=Joiner.on(File.separator).skipNulls();
 			String fullPathName=name.join(PathConstructor.createFromDefaultProperty(),filename);
 			((ScriptControllerBase)getEventAdmin()).update(this, new PlotDataFileEvent(fullPathName, true));
 		}
