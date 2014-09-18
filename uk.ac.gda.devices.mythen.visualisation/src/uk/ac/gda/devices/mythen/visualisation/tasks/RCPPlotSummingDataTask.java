@@ -36,13 +36,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import org.apache.commons.io.FilenameUtils;
+import org.eclipse.dawnsci.analysis.dataset.impl.DoubleDataset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 
 import uk.ac.diamond.scisoft.analysis.PlotServer;
 import uk.ac.diamond.scisoft.analysis.SDAPlotter;
-import uk.ac.diamond.scisoft.analysis.dataset.DoubleDataset;
 import uk.ac.gda.devices.mythen.epics.MythenDetector;
 import uk.ac.gda.devices.mythen.visualisation.event.PlotDataFileEvent;
 /**
