@@ -18,6 +18,17 @@
 
 package uk.ac.gda.devices.mythen.visualisation.tasks;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+
+import org.apache.commons.io.FilenameUtils;
+import org.eclipse.dawnsci.analysis.dataset.impl.Dataset;
+import org.eclipse.dawnsci.analysis.dataset.impl.DatasetFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+
 import gda.analysis.Plotter;
 import gda.data.fileregistrar.FileRegistrarHelper;
 import gda.device.Detector;
@@ -30,43 +41,32 @@ import gda.device.detector.mythen.tasks.DataProcessingTask;
 import gda.jython.InterfaceProvider;
 import gda.jython.scriptcontroller.ScriptControllerBase;
 import gda.jython.scriptcontroller.Scriptcontroller;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-
-import org.apache.commons.io.FilenameUtils;
-import org.eclipse.dawnsci.analysis.dataset.impl.DoubleDataset;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
-
 import uk.ac.diamond.scisoft.analysis.PlotServer;
 import uk.ac.diamond.scisoft.analysis.SDAPlotter;
 import uk.ac.gda.devices.mythen.epics.MythenDetector;
 import uk.ac.gda.devices.mythen.visualisation.event.PlotDataFileEvent;
 /**
  * A Spring configurable {@link DataProcessingTask} to sum all the data files collected from the {@link MythenDetector} in a scan.
- * The summed data are then plotted either using an instance of {@link PlotServer} built-in GDA server or directly by the GDA client 
- * from the data file using event notification to the registered observers. 
+ * The summed data are then plotted either using an instance of {@link PlotServer} built-in GDA server or directly by the GDA client
+ * from the data file using event notification to the registered observers.
  */
 public class RCPPlotSummingDataTask implements DataProcessingTask, InitializingBean {
-	
+
 	private static final Logger logger = LoggerFactory.getLogger(RCPPlotSummingDataTask.class);
-	
+
 	protected double step = 0.004;
-	
+
 	/**
 	 * Sets the angle step to use when summing the data.
 	 */
 	public void setStep(double step) {
 		this.step = step;
 	}
-	
+
 	public double getStep() {
 		return step;
 	}
-	
+
 	protected String panelName;
 
 	private String xAxisName;
@@ -74,9 +74,9 @@ public class RCPPlotSummingDataTask implements DataProcessingTask, InitializingB
 	private String yAxisName;
 
 	private boolean usePlotServer=true; //this is the old behaviour
-	
+
 	private Scriptcontroller eventAdmin;
-	
+
 	protected void sumProcessedData(Detector detector)  throws DeviceException {
 		ArrayList<File> files=new ArrayList<File>();
 		int numberOfModules;
@@ -94,18 +94,18 @@ public class RCPPlotSummingDataTask implements DataProcessingTask, InitializingB
 			throw new RuntimeException("summing processed data is not supported for detcetor "+detector.getName());
 		}
 		logger.info(String.format("Going to sum %d dataset(s)", files.size()));
-		
+
 		// Build filename of each processed data file
 		String[] filenames = new String[files.size()];
 		for (int i=1; i<=files.size(); i++) {
 			filenames[i-1] = files.get(i-1).getAbsolutePath();
 		}
-		
+
 		// Load all processed data files
 		logger.info("Loading processed data...");
 		double[][][] allData = MythenDataFileUtils.readMythenProcessedDataFiles(filenames);
 		logger.info("Done");
-		
+
 		// Sum the data
 		logger.info("Summing data...");
 		print("Summing data ...");
@@ -125,10 +125,10 @@ public class RCPPlotSummingDataTask implements DataProcessingTask, InitializingB
 			logger.error(msg, e);
 			throw new DeviceException(msg, e);
 		}
-		
+
 		// Register summed data file
 		FileRegistrarHelper.registerFile(summedDataFile.getAbsolutePath());
-		
+
 		if (isUsePlotServer()) {
 			// Plot summed data
 			final int numChannels = summedData.length;
@@ -139,9 +139,9 @@ public class RCPPlotSummingDataTask implements DataProcessingTask, InitializingB
 				counts[i] = summedData[i][1];
 			}
 			String name2 = FilenameUtils.getName(summedDataFile.getAbsolutePath());
-			DoubleDataset anglesDataset = new DoubleDataset(angles);
+			Dataset anglesDataset = DatasetFactory.createFromObject(angles);
 			anglesDataset.setName("angle");
-			DoubleDataset countsDataset = new DoubleDataset(counts);
+			Dataset countsDataset = DatasetFactory.createFromObject(counts);
 			countsDataset.setName(name2);
 			// Swing plot panel
 			Plotter.plot(panelName, anglesDataset, countsDataset);
@@ -170,7 +170,7 @@ public class RCPPlotSummingDataTask implements DataProcessingTask, InitializingB
 				throw new IllegalArgumentException("You have not specified which panel the data should be plotted in");
 			}
 		} else {
-			//to tell RCP client data file name to plot 
+			//to tell RCP client data file name to plot
 			if (getEventAdmin() == null) {
 				throw new IllegalArgumentException("You have not specified a Scriptcontroller as EventAdmin.");
 			}
@@ -202,7 +202,7 @@ public class RCPPlotSummingDataTask implements DataProcessingTask, InitializingB
 	}
 	/**
 	 * method to print message to the Jython Terminal console.
-	 * 
+	 *
 	 * @param msg
 	 */
 	private void print(String msg) {
