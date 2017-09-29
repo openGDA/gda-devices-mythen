@@ -29,7 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 
-import gda.analysis.Plotter;
 import gda.data.fileregistrar.FileRegistrarHelper;
 import gda.device.Detector;
 import gda.device.DeviceException;
@@ -143,8 +142,6 @@ public class RCPPlotSummingDataTask implements DataProcessingTask, InitializingB
 			anglesDataset.setName("angle");
 			Dataset countsDataset = DatasetFactory.createFromObject(counts);
 			countsDataset.setName(name2);
-			// Swing plot panel
-			Plotter.plot(panelName, anglesDataset, countsDataset);
 			try {
 				// RCP plot panel
 				SDAPlotter.plot(panelName, anglesDataset, countsDataset);
