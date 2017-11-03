@@ -16,7 +16,7 @@
  * with GDA. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package uk.ac.gda.devices.mythen.visualisation.tasks;
+package gda.device.detector.mythen.tasks;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,14 +36,13 @@ import gda.device.detector.mythen.data.DataConverter;
 import gda.device.detector.mythen.data.MythenDataFileUtils;
 import gda.device.detector.mythen.data.MythenDataFileUtils.FileType;
 import gda.device.detector.mythen.data.MythenSum;
-import gda.device.detector.mythen.tasks.DataProcessingTask;
 import gda.jython.InterfaceProvider;
 import gda.jython.scriptcontroller.ScriptControllerBase;
 import gda.jython.scriptcontroller.Scriptcontroller;
 import uk.ac.diamond.scisoft.analysis.PlotServer;
 import uk.ac.diamond.scisoft.analysis.SDAPlotter;
 import uk.ac.gda.devices.mythen.epics.MythenDetector;
-import uk.ac.gda.devices.mythen.visualisation.event.PlotDataFileEvent;
+import uk.ac.gda.devices.mythen.event.PlotDataFileEvent;
 /**
  * A Spring configurable {@link DataProcessingTask} to sum all the data files collected from the {@link MythenDetector} in a scan.
  * The summed data are then plotted either using an instance of {@link PlotServer} built-in GDA server or directly by the GDA client

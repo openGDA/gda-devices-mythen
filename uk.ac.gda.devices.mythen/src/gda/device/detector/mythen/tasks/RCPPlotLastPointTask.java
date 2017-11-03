@@ -16,9 +16,9 @@
  * with GDA. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package uk.ac.gda.devices.mythen.visualisation.tasks;
+package gda.device.detector.mythen.tasks;
 
-import java.io.File;
+import java.nio.file.Paths;
 
 import org.apache.commons.io.FilenameUtils;
 import org.eclipse.january.dataset.DatasetFactory;
@@ -27,15 +27,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 
-import com.google.common.base.Joiner;
-
 import gda.data.PathConstructor;
 import gda.device.detector.mythen.data.MythenProcessedDataset;
-import gda.device.detector.mythen.tasks.AtPointEndTask;
 import gda.jython.scriptcontroller.ScriptControllerBase;
 import gda.jython.scriptcontroller.Scriptcontroller;
 import uk.ac.diamond.scisoft.analysis.SDAPlotter;
-import uk.ac.gda.devices.mythen.visualisation.event.PlotDataFileEvent;
+import uk.ac.gda.devices.mythen.event.PlotDataFileEvent;
 
 public class RCPPlotLastPointTask implements AtPointEndTask, InitializingBean {
 
@@ -79,8 +76,8 @@ public class RCPPlotLastPointTask implements AtPointEndTask, InitializingBean {
 			if (FilenameUtils.getExtension(filename) == "") {
 				filename=filename+".dat";
 			}
-			Joiner name=Joiner.on(File.separator).skipNulls();
-			String fullPathName=name.join(PathConstructor.createFromDefaultProperty(),filename);
+
+			String fullPathName = Paths.get(PathConstructor.createFromDefaultProperty(),filename).toString();
 			((ScriptControllerBase)getEventAdmin()).update(this, new PlotDataFileEvent(fullPathName, true));
 		}
 
@@ -111,8 +108,7 @@ public class RCPPlotLastPointTask implements AtPointEndTask, InitializingBean {
 			}
 		} else {
 			//send event to client to do data plot
-			Joiner name=Joiner.on(File.pathSeparator).skipNulls();
-			String fullPathName=name.join(PathConstructor.createFromDefaultProperty(),filename);
+			String fullPathName=Paths.get(PathConstructor.createFromDefaultProperty(),filename).toString();
 			((ScriptControllerBase)getEventAdmin()).update(this, new PlotDataFileEvent(fullPathName, clearFirst));
 		}
 	}
